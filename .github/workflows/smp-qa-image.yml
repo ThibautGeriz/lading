@@ -1,0 +1,28 @@
+# Throwaway: builds lading v0.31.2 + the cgroup.procs fix (DataDog/lading#1932)
+# as a linux/amd64 image for SMP QA. Not for merging.
+name: smp-qa-image
+on:
+  push:
+    branches: [smp-qa-image-0.31.2-pr1932]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: |
+          : > empty
+          DOCKER_BUILDKIT=1 docker build -t lading:0.31.2-pr1932 \
+            --secret id=aws_access_key_id,src=empty \
+            --secret id=aws_secret_access_key,src=empty \
+            --secret id=aws_session_token,src=empty .
+          docker run --rm lading:0.31.2-pr1932 --version
+          docker save lading:0.31.2-pr1932 | gzip > lading-image.tar.gz
+          ls -la lading-image.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lading-image-0.31.2-pr1932
+          path: lading-image.tar.gz
+          retention-days: 3
